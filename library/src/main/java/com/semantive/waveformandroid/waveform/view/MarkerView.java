@@ -22,7 +22,6 @@ import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.widget.ImageView;
 
 /**
  * Represents a draggable start or end marker.
@@ -36,7 +35,7 @@ import android.widget.ImageView;
  *
  * Modified by Anna Stępień <anna.stepien@semantive.com>
  */
-public class MarkerView extends ImageView {
+public class MarkerView extends android.support.v7.widget.AppCompatImageView {
 
     public interface MarkerListener {
         public void markerTouchStart(MarkerView marker, float pos);
