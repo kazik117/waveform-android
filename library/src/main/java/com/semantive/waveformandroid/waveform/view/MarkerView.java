@@ -35,7 +35,7 @@ import android.view.MotionEvent;
  *
  * Modified by Anna Stępień <anna.stepien@semantive.com>
  */
-public class MarkerView extends android.support.v7.widget.AppCompatImageView {
+public class MarkerView extends androidx.appcompat.widget.AppCompatImageView {
 
     public interface MarkerListener {
         public void markerTouchStart(MarkerView marker, float pos);
@@ -105,7 +105,7 @@ public class MarkerView extends android.support.v7.widget.AppCompatImageView {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         mVelocity++;
-        int v = (int) Math.sqrt(1 + mVelocity / 2);
+        int v = (int) Math.sqrt(1 + mVelocity / 2f);
         if (mListener != null) {
             if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
                 mListener.markerLeft(this, v);
