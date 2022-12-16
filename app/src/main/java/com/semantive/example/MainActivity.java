@@ -1,20 +1,61 @@
 package com.semantive.example;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import android.os.Environment;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.os.EnvironmentCompat;
+
 import com.semantive.waveformandroid.waveform.Segment;
 import com.semantive.waveformandroid.waveform.WaveformFragment;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final int REQUEST_READ_STORAGE = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        checkPermission(
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                REQUEST_READ_STORAGE,
+                () -> launchWaveFormFromFile(savedInstanceState)
+        );
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_READ_STORAGE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                launchWaveFormFromFile(null);
+            }
+        }
+    }
+
+    private void checkPermission(final String permission, int requestCode, final Runnable action) {
+        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(this, new String[]{permission}, requestCode);
+        } else {
+            action.run();
+        }
+    }
+
+    private void launchWaveFormFromFile(@Nullable Bundle savedInstanceState) {
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.container, new CustomWaveformFragment())

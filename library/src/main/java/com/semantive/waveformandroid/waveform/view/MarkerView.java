@@ -22,7 +22,6 @@ import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.widget.ImageView;
 
 /**
  * Represents a draggable start or end marker.
@@ -36,7 +35,7 @@ import android.widget.ImageView;
  *
  * Modified by Anna Stępień <anna.stepien@semantive.com>
  */
-public class MarkerView extends ImageView {
+public class MarkerView extends androidx.appcompat.widget.AppCompatImageView {
 
     public interface MarkerListener {
         public void markerTouchStart(MarkerView marker, float pos);
@@ -106,7 +105,7 @@ public class MarkerView extends ImageView {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         mVelocity++;
-        int v = (int) Math.sqrt(1 + mVelocity / 2);
+        int v = (int) Math.sqrt(1 + mVelocity / 2f);
         if (mListener != null) {
             if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
                 mListener.markerLeft(this, v);

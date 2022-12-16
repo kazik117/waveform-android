@@ -6,8 +6,10 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.DisplayMetrics;
@@ -101,14 +103,14 @@ public abstract class WaveformFragment extends Fragment implements MarkerView.Ma
     protected int mMarkerBottomOffset;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         View view = inflater.inflate(R.layout.fragment_waveform, container, false);
         loadGui(view);
         if (mSoundFile == null) {
             loadFromFile();
         } else {
-            mHandler.post(() -> finishOpeningSoundFile());
+            mHandler.post(this::finishOpeningSoundFile);
         }
         return view;
     }
@@ -622,9 +624,7 @@ public abstract class WaveformFragment extends Fragment implements MarkerView.Ma
     protected int trap(int pos) {
         if (pos < 0)
             return 0;
-        if (pos > mMaxPos)
-            return mMaxPos;
-        return pos;
+        return Math.min(pos, mMaxPos);
     }
 
     protected void setOffsetGoalStart() {
