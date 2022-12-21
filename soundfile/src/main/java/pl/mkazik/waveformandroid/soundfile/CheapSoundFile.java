@@ -17,8 +17,6 @@
 package pl.mkazik.waveformandroid.soundfile;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * CheapSoundFile is the parent class of several subclasses that each
@@ -52,61 +50,12 @@ public class CheapSoundFile {
         public String[] getSupportedExtensions();
     }
 
-    static Factory[] sSubclassFactories = new Factory[] {
-        CheapAAC.getFactory(),
-        CheapAMR.getFactory(),
-        CheapMP3.getFactory(),
-        CheapWAV.getFactory(),
-    };
-
-    static ArrayList<String> sSupportedExtensions = new ArrayList<String>();
-    static HashMap<String, Factory> sExtensionMap =
-        new HashMap<String, Factory>();
-
-    static {
-        for (Factory f : sSubclassFactories) {
-            for (String extension : f.getSupportedExtensions()) {
-                sSupportedExtensions.add(extension);
-                sExtensionMap.put(extension, f);
-            }
-        }
-    }
-
-	/**
-	 * Static method to create the appropriate CheapSoundFile subclass
-	 * given a filename.
-	 *
-	 * TODO: make this more modular rather than hardcoding the logic
-	 */
-    public static CheapSoundFile create(String fileName,
-                                        ProgressListener progressListener)
-        throws java.io.FileNotFoundException,
-               java.io.IOException {
-        File f = new File(fileName);
-        if (!f.exists()) {
-            throw new java.io.FileNotFoundException(fileName);
-        }
-        String name = f.getName().toLowerCase();
-        String[] components = name.split("\\.");
-        if (components.length < 2) {
-            return null;
-        }
-        Factory factory = sExtensionMap.get(components[components.length - 1]);
-        if (factory == null) {
-            return null;
-        }
-        CheapSoundFile soundFile = factory.create();
-        soundFile.setProgressListener(progressListener);
-        soundFile.ReadFile(f);
-        return soundFile;
-    }
-
     public static boolean isFilenameSupported(String filename) {
         String[] components = filename.toLowerCase().split("\\.");
         if (components.length < 2) {
             return false;
         }
-        return sExtensionMap.containsKey(components[components.length - 1]);
+        return CheapSoundFactory.sExtensionMap.containsKey(components[components.length - 1]);
     }
 
 	/**
@@ -114,8 +63,8 @@ public class CheapSoundFile {
 	 * our subclasses.
 	 */
     public static String[] getSupportedExtensions() {
-        return sSupportedExtensions.toArray(
-            new String[sSupportedExtensions.size()]);
+        return CheapSoundFactory.sSupportedExtensions.toArray(
+            new String[CheapSoundFactory.sSupportedExtensions.size()]);
     }
 
     protected ProgressListener mProgressListener = null;

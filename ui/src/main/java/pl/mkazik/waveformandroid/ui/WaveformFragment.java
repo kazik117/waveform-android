@@ -42,6 +42,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.List;
 
+import pl.mkazik.waveformandroid.soundfile.CheapSoundFactory;
 import pl.mkazik.waveformandroid.soundfile.CheapSoundFile;
 import pl.mkazik.waveformandroid.ui.view.MarkerView;
 import pl.mkazik.waveformandroid.ui.view.WaveformView;
@@ -442,7 +443,7 @@ public abstract class WaveformFragment extends Fragment implements MarkerView.Ma
         new Thread() {
             public void run() {
                 try {
-                    mSoundFile = CheapSoundFile.create(mFile.getAbsolutePath(), listener);
+                    mSoundFile = CheapSoundFactory.create(mFile.getAbsolutePath(), listener);
                 } catch (final Exception e) {
                     Log.e(TAG, "Error while loading sound file", e);
                     mProgressDialog.dismiss();
