@@ -4,23 +4,19 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Environment;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.os.EnvironmentCompat;
 
-import com.semantive.waveformandroid.waveform.Segment;
-import com.semantive.waveformandroid.waveform.WaveformFragment;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
+
+import pl.mkazik.waveformandroid.ui.Segment;
+import pl.mkazik.waveformandroid.ui.WaveformFragment;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -85,7 +81,8 @@ public class MainActivity extends AppCompatActivity {
             return Arrays.asList(
                     new Segment(55.2, 55.8, Color.rgb(238, 23, 104)),
                     new Segment(56.2, 56.6, Color.rgb(238, 23, 104)),
-                    new Segment(58.4, 59.9, Color.rgb(184, 92, 184)));
+                    new Segment(58.4, 59.9, Color.rgb(184, 92, 184))
+            );
         }
     }
 }
