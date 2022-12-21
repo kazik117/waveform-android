@@ -2,7 +2,7 @@
 
 [![](https://jitpack.io/v/Semantive/waveform-android.svg)](https://jitpack.io/#Semantive/waveform-android)
 
-**Disclaimer: this project is no longer actively maintained.**
+This fork updates the project to the latest possible dependencies.
 
 Waveform Android is an audio visualisation component based on the Ringdroid app: https://github.com/google/ringdroid. It provides easy to use, reusable fragment, which can be integrated into any app. 
 
@@ -34,7 +34,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.Semantive:waveform-android:v1.2'
+    compile 'com.github.kazik117:waveform-android:v1.2'
 }
 ```
 
@@ -48,7 +48,7 @@ dependencies {
 </repositories>
 	
 <dependency>
-    <groupId>com.github.Semantive</groupId>
+    <groupId>com.github.kazik117</groupId>
     <artifactId>waveform-android</artifactId>
     <version>v1.2</version>
 </dependency>
@@ -56,7 +56,7 @@ dependencies {
 
 License
 -----
-Copyright 2008-2011 Google Inc., 2015-2016 Anna Stępień
+Copyright 2008-2011 Google Inc., 2015-2016 Anna Stępień, 2022 Mateusz Kaźmierczak
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
