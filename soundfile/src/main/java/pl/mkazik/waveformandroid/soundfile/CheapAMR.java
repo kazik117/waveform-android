@@ -18,6 +18,7 @@ package pl.mkazik.waveformandroid.soundfile;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -42,13 +43,16 @@ public class CheapAMR extends CheapSoundFile {
             public String[] getSupportedExtensions() {
                 return new String[] { "3gpp", "3gp", "amr" };
             }
+            @Override
+            public String[] getSupportedMimeTypes() {
+                return new String[0];
+            }
         };
     }
 
     // Member variables containing frame info
     private int mNumFrames;
     private int[] mFrameGains;
-    private int mFileSize;
     private int mBitRate;
 
     // Member variables used only while initially parsing the file
@@ -73,7 +77,7 @@ public class CheapAMR extends CheapSoundFile {
     }
 
     public int getFileSizeBytes() {
-        return mFileSize;        
+        return (int) mFileSize;
     }
 
     public int getAvgBitrateKbps() {
@@ -96,14 +100,6 @@ public class CheapAMR extends CheapSoundFile {
             throws java.io.FileNotFoundException,
             java.io.IOException {
         super.ReadFile(inputFile);
-        mNumFrames = 0;
-        mMaxFrames = 64;  // This will grow as needed
-        mFrameGains = new int[mMaxFrames];
-        mMinGain = 1000000000;
-        mMaxGain = 0;
-        mBitRate = 10;
-        mOffset = 0;
-
         // No need to handle filesizes larger than can fit in a 32-bit int
         mFileSize = (int)mInputFile.length();
 
@@ -112,42 +108,56 @@ public class CheapAMR extends CheapSoundFile {
         }
 
         FileInputStream stream = new FileInputStream(mInputFile);
+        ReadStream(stream, mFileSize);
+    }
+
+    @Override
+    public void ReadStream(InputStream inputStream, long length) throws IOException {
+        super.ReadStream(inputStream, length);
+        mNumFrames = 0;
+        mMaxFrames = 64;  // This will grow as needed
+        mFrameGains = new int[mMaxFrames];
+        mMinGain = 1000000000;
+        mMaxGain = 0;
+        mBitRate = 10;
+        mOffset = 0;
+
         byte[] header = new byte[12];
-        stream.read(header, 0, 6);
+        mInputStream.read(header, 0, 6);
         mOffset += 6;
         if (header[0] == '#' &&
-            header[1] == '!' &&
-            header[2] == 'A' &&
-            header[3] == 'M' &&
-            header[4] == 'R' &&
-            header[5] == '\n') {
-            parseAMR(stream, mFileSize - 6);
+                header[1] == '!' &&
+                header[2] == 'A' &&
+                header[3] == 'M' &&
+                header[4] == 'R' &&
+                header[5] == '\n') {
+            parseAMR(mInputStream, (int) (length - 6));
         }
 
-        stream.read(header, 6, 6);
+        mInputStream.read(header, 6, 6);
         mOffset += 6;
 
         if (header[4] == 'f' &&
-            header[5] == 't' &&
-            header[6] == 'y' &&
-            header[7] == 'p' &&
-            header[8] == '3' &&
-            header[9] == 'g' &&
-            header[10] == 'p' &&
-            header[11] == '4') {
+                header[5] == 't' &&
+                header[6] == 'y' &&
+                header[7] == 'p' &&
+                header[8] == '3' &&
+                header[9] == 'g' &&
+                header[10] == 'p' &&
+                header[11] == '4') {
 
             int boxLen =
-                ((0xff & header[0]) << 24) |
-                ((0xff & header[1]) << 16) |
-                ((0xff & header[2]) << 8) |
-                ((0xff & header[3]));
+                    ((0xff & header[0]) << 24) |
+                            ((0xff & header[1]) << 16) |
+                            ((0xff & header[2]) << 8) |
+                            ((0xff & header[3]));
 
             if (boxLen >= 4 && boxLen <= mFileSize - 8) {
-                stream.skip(boxLen - 12);
+                mInputStream.skip(boxLen - 12);
                 mOffset += boxLen - 12;
             }
 
-            parse3gpp(stream, mFileSize - boxLen);
+            parse3gpp(mInputStream, (int) (length - boxLen));
         }
     }
 
@@ -177,8 +187,8 @@ public class CheapAMR extends CheapSoundFile {
             return;
         }
 
-	stream.skip(boxLen - 8);
-	mOffset += (boxLen - 8);
+        stream.skip(boxLen - 8);
+        mOffset += (boxLen - 8);
 
         parse3gpp(stream, maxLen - boxLen);
     }

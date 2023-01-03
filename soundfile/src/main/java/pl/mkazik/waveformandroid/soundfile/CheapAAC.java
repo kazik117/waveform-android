@@ -38,6 +38,10 @@ public class CheapAAC extends CheapSoundFile {
             public String[] getSupportedExtensions() {
                 return new String[] { "aac", "m4a" };
             }
+            @Override
+            public String[] getSupportedMimeTypes() {
+                return new String[] { "audio/aac", "audio/m4a" };
+            }
         };
     }
 

@@ -18,6 +18,8 @@ package pl.mkazik.waveformandroid.soundfile;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * CheapMP3 represents an MP3 file by doing a "cheap" scan of the file,
@@ -35,6 +37,9 @@ public class CheapMP3 extends CheapSoundFile {
             }
             public String[] getSupportedExtensions() {
                 return new String[] { "mp3" };
+            }
+            public String[] getSupportedMimeTypes() {
+                return new String[] { "audio/mpeg" };
             }
         };
     }
@@ -92,6 +97,16 @@ public class CheapMP3 extends CheapSoundFile {
             throws java.io.FileNotFoundException,
             java.io.IOException {
         super.ReadFile(inputFile);
+        // No need to handle filesizes larger than can fit in a 32-bit int
+        mFileSize = (int)mInputFile.length();
+
+        FileInputStream stream = new FileInputStream(mInputFile);
+        ReadStream(stream, mFileSize);
+    }
+
+    @Override
+    public void ReadStream(InputStream inputStream, long length) throws IOException {
+        super.ReadStream(inputStream, length);
         mNumFrames = 0;
         mMaxFrames = 64;  // This will grow as needed
         mFrameGains = new int[mMaxFrames];
@@ -99,18 +114,13 @@ public class CheapMP3 extends CheapSoundFile {
         mMinGain = 255;
         mMaxGain = 0;
 
-        // No need to handle filesizes larger than can fit in a 32-bit int
-        mFileSize = (int)mInputFile.length();
-
-        FileInputStream stream = new FileInputStream(mInputFile);
-
         int pos = 0;
         int offset = 0;
         byte[] buffer = new byte[12];
-        while (pos < mFileSize - 12) {
+        while (pos < length - 12) {
             // Read 12 bytes at a time and look for a sync code (0xFF)
             while (offset < 12) {
-                offset += stream.read(buffer, offset, 12 - offset);
+                offset += mInputStream.read(buffer, offset, 12 - offset);
             }
             int bufferOffset = 0;
             while (bufferOffset < 12 &&
@@ -119,7 +129,7 @@ public class CheapMP3 extends CheapSoundFile {
 
             if (mProgressListener != null) {
                 boolean keepGoing = mProgressListener.reportProgress(
-                    pos * 1.0 / mFileSize);
+                        pos * 1.0 / mFileSize);
                 if (!keepGoing) {
                     break;
                 }
@@ -183,17 +193,17 @@ public class CheapMP3 extends CheapSoundFile {
                 mGlobalChannels = 1;
                 if (mpgVersion == 1) {
                     gain = ((buffer[10] & 0x01) << 7) +
-                        ((buffer[11] & 0xFE) >> 1);
+                            ((buffer[11] & 0xFE) >> 1);
                 } else {
                     gain = ((buffer[9] & 0x03) << 6) +
-                    ((buffer[10] & 0xFC) >> 2);
+                            ((buffer[10] & 0xFC) >> 2);
                 }
             } else {
                 // 2 channels
                 mGlobalChannels = 2;
                 if (mpgVersion == 1) {
                     gain = ((buffer[9]  & 0x7F) << 1) +
-                        ((buffer[10] & 0x80) >> 7);
+                            ((buffer[10] & 0x80) >> 7);
                 } else {
                     gain = 0;  // ???
                 }
@@ -218,7 +228,7 @@ public class CheapMP3 extends CheapSoundFile {
 
                 mAvgBitRate = mBitrateSum / mNumFrames;
                 int totalFramesGuess =
-                    ((mFileSize / mAvgBitRate) * sampleRate) / 144000;
+                        ((mFileSize / mAvgBitRate) * sampleRate) / 144000;
                 int newMaxFrames = totalFramesGuess * 11 / 10;
                 if (newMaxFrames < mMaxFrames * 2)
                     newMaxFrames = mMaxFrames * 2;
@@ -233,7 +243,7 @@ public class CheapMP3 extends CheapSoundFile {
                 mMaxFrames = newMaxFrames;
             }
 
-            stream.skip(frameLen - 12);
+            mInputStream.skip(frameLen - 12);
             pos += frameLen;
             offset = 0;
         }

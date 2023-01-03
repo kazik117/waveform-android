@@ -17,15 +17,20 @@
 package pl.mkazik.waveformandroid.ui;
 
 import android.app.ProgressDialog;
+import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.media.AudioManager;
+import android.media.MediaDataSource;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
+import android.os.ParcelFileDescriptor;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.DisplayMetrics;
@@ -39,7 +44,10 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 import pl.mkazik.waveformandroid.soundfile.CheapSoundFactory;
@@ -62,7 +70,11 @@ public abstract class WaveformFragment extends Fragment implements MarkerView.Ma
     protected ProgressDialog mProgressDialog;
     protected CheapSoundFile mSoundFile;
     protected File mFile;
+    protected InputStream mInputStream;
+    protected long mFileSize;
     protected String mFilename;
+    protected Uri mUri;
+    protected String mMimeType;
     protected WaveformView mWaveformView;
     protected MarkerView mStartMarker;
     protected MarkerView mEndMarker;
@@ -125,6 +137,9 @@ public abstract class WaveformFragment extends Fragment implements MarkerView.Ma
         mIsPlaying = false;
 
         mFilename = getFileName();
+        mUri = getUri();
+        mMimeType = requireContext().getContentResolver().getType(mUri);
+
         mSoundFile = null;
         mKeyDown = false;
 
@@ -137,6 +152,8 @@ public abstract class WaveformFragment extends Fragment implements MarkerView.Ma
     public void onDestroy() {
         if (mPlayer != null && mPlayer.isPlaying()) {
             mPlayer.stop();
+        }
+        if (mPlayer != null) {
             mPlayer.release();
             mPlayer = null;
         }
@@ -404,7 +421,21 @@ public abstract class WaveformFragment extends Fragment implements MarkerView.Ma
     }
 
     protected void loadFromFile() {
-        mFile = new File(mFilename);
+        if (mUri == null) {
+            mFile = new File(mFilename);
+        } else {
+            try {
+                final ContentResolver cr = requireContext().getContentResolver();
+                final ParcelFileDescriptor pfd = cr.openFileDescriptor(mUri, "r");
+                mInputStream = cr.openInputStream(mUri);
+                mFileSize = pfd == null ? 0 : pfd.getStatSize();
+                if (pfd != null) {
+                    pfd.close();
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "Cannot open file with uri " + mUri, e);
+            }
+        }
         mLoadingLastUpdateTime = System.currentTimeMillis();
         mLoadingKeepGoing = true;
         mProgressDialog = new ProgressDialog(getActivity());
@@ -428,11 +459,13 @@ public abstract class WaveformFragment extends Fragment implements MarkerView.Ma
         new Thread() {
             public void run() {
                 try {
-                    MediaPlayer player = new MediaPlayer();
-                    player.setDataSource(mFile.getAbsolutePath());
-                    player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                    player.prepare();
-                    mPlayer = player;
+                    if (mInputStream == null) {
+                        MediaPlayer player = new MediaPlayer();
+                        player.setDataSource(mFile.getAbsolutePath());
+                        player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                        player.prepare();
+                        mPlayer = player;
+                    }
                 } catch (final java.io.IOException e) {
                     Log.e(TAG, "Error while creating media player", e);
                 }
@@ -443,7 +476,11 @@ public abstract class WaveformFragment extends Fragment implements MarkerView.Ma
         new Thread() {
             public void run() {
                 try {
-                    mSoundFile = CheapSoundFactory.create(mFile.getAbsolutePath(), listener);
+                    if (mInputStream != null) {
+                        mSoundFile = CheapSoundFactory.create(mInputStream, mFileSize, mMimeType, listener);
+                    } else {
+                        mSoundFile = CheapSoundFactory.create(mFile.getAbsolutePath(), listener);
+                    }
                 } catch (final Exception e) {
                     Log.e(TAG, "Error while loading sound file", e);
                     mProgressDialog.dismiss();
@@ -841,6 +878,8 @@ public abstract class WaveformFragment extends Fragment implements MarkerView.Ma
     };
 
     protected abstract String getFileName();
+
+    protected abstract Uri getUri();
 
     protected List<Segment> getSegments() {
         return null;

@@ -3,6 +3,8 @@ package pl.mkazik.waveformandroid.soundfile;
 import androidx.annotation.Nullable;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -14,6 +16,7 @@ public class CheapSoundFactory {
             CheapWAV.getFactory(),
     };
     static ArrayList<String> sSupportedExtensions = new ArrayList<>();
+    static ArrayList<String> sSupportedMimeTypes = new ArrayList<>();
     static HashMap<String, CheapSoundFile.Factory> sExtensionMap = new HashMap<>();
 
     static {
@@ -21,6 +24,10 @@ public class CheapSoundFactory {
             for (String extension : f.getSupportedExtensions()) {
                 sSupportedExtensions.add(extension);
                 sExtensionMap.put(extension, f);
+            }
+            for (String mimeType : f.getSupportedMimeTypes()) {
+                sSupportedMimeTypes.add(mimeType);
+                sExtensionMap.put(mimeType, f);
             }
         }
     }
@@ -52,6 +59,23 @@ public class CheapSoundFactory {
         CheapSoundFile soundFile = factory.create();
         soundFile.setProgressListener(progressListener);
         soundFile.ReadFile(f);
+        return soundFile;
+    }
+
+    @Nullable
+    public static CheapSoundFile create(
+            InputStream inputStream,
+            long fileSize,
+            String mimeType,
+            CheapSoundFile.ProgressListener progressListener
+    ) throws IOException {
+        CheapSoundFile.Factory factory = sExtensionMap.get(mimeType);
+        if (factory == null) {
+            return null;
+        }
+        CheapSoundFile soundFile = factory.create();
+        soundFile.setProgressListener(progressListener);
+        soundFile.ReadStream(inputStream, fileSize);
         return soundFile;
     }
 }

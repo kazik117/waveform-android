@@ -19,11 +19,13 @@ package pl.mkazik.waveformandroid.soundfile;
 import android.util.Log;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * CheapWAV represents a standard 16-bit WAV file, splitting it into
  * artificial frames to get an approximation of the waveform contour.
- *
+ * <p>
  * Modified by Anna Stępień <anna.stepien@semantive.com>
  */
 public class CheapWAV extends CheapSoundFile {
@@ -36,6 +38,9 @@ public class CheapWAV extends CheapSoundFile {
             }
             public String[] getSupportedExtensions() {
                 return new String[]{"wav"};
+            }
+            public String[] getSupportedMimeTypes() {
+                return new String[] { "audio/x-wav" };
             }
         };
     }
@@ -91,35 +96,50 @@ public class CheapWAV extends CheapSoundFile {
         }
         try {
             WavFile wavFile = WavFile.openWavFile(inputFile);
-            mNumFrames = (int) (wavFile.getNumFrames() / getSamplesPerFrame());
-            mFrameGains = new int[mNumFrames];
-            mSampleRate = (int) wavFile.getSampleRate();
-            mChannels = wavFile.getNumChannels();
-
-            int gain, value;
-            int[] buffer = new int[getSamplesPerFrame()];
-            for (int i = 0; i < mNumFrames; i++) {
-                gain = -1;
-                wavFile.readFrames(buffer, getSamplesPerFrame());
-                for (int j = 0; j < getSamplesPerFrame(); j++) {
-                    value = buffer[j];
-                    if (gain < value) {
-                        gain = value;
-                    }
-                }
-                mFrameGains[i] = (int) Math.sqrt(gain);
-                if (mProgressListener != null) {
-                    boolean keepGoing = mProgressListener.reportProgress(i * 1.0 / mFrameGains.length);
-                    if (!keepGoing) {
-                        break;
-                    }
-                }
-            }
-            if (wavFile != null) {
-                wavFile.close();
-            }
+            parseWavFile(wavFile);
         } catch (WavFileException e) {
             Log.e(TAG, "Exception while reading wav file", e);
+        }
+    }
+
+    @Override
+    public void ReadStream(InputStream inputStream, long length) throws IOException {
+        super.ReadStream(inputStream, length);
+        try {
+            WavFile wavFile = WavFile.openWavFile(inputStream);
+            parseWavFile(wavFile);
+        } catch (WavFileException e) {
+            Log.e(TAG, "Exception while reading wav file", e);
+        }
+    }
+
+    private void parseWavFile(WavFile wavFile) throws IOException, WavFileException {
+        mNumFrames = (int) (wavFile.getNumFrames() / getSamplesPerFrame());
+        mFrameGains = new int[mNumFrames];
+        mSampleRate = (int) wavFile.getSampleRate();
+        mChannels = wavFile.getNumChannels();
+
+        int gain, value;
+        int[] buffer = new int[getSamplesPerFrame()];
+        for (int i = 0; i < mNumFrames; i++) {
+            gain = -1;
+            wavFile.readFrames(buffer, getSamplesPerFrame());
+            for (int j = 0; j < getSamplesPerFrame(); j++) {
+                value = buffer[j];
+                if (gain < value) {
+                    gain = value;
+                }
+            }
+            mFrameGains[i] = (int) Math.sqrt(gain);
+            if (mProgressListener != null) {
+                boolean keepGoing = mProgressListener.reportProgress(i * 1.0 / mFrameGains.length);
+                if (!keepGoing) {
+                    break;
+                }
+            }
+        }
+        if (wavFile != null) {
+            wavFile.close();
         }
     }
 }

@@ -1,10 +1,12 @@
 package com.semantive.example;
 
-import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,12 +27,24 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        checkPermission(
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-                REQUEST_READ_STORAGE,
-                () -> launchWaveFormFromFile(savedInstanceState)
-        );
+//        checkPermission(
+//                Manifest.permission.READ_EXTERNAL_STORAGE,
+//                REQUEST_READ_STORAGE,
+//                () -> launchWaveFormFromFile(savedInstanceState)
+//        );
+        if (savedInstanceState == null)
+            mGetContent.launch("audio/*");
     }
+
+    private final ActivityResultLauncher<String> mGetContent =
+            registerForActivityResult(
+                    new ActivityResultContracts.GetContent(),
+                    result -> {
+                        getSupportFragmentManager().beginTransaction()
+                                .add(R.id.container, CustomWaveformFragment.newInstance(result))
+                                .commit();
+                    }
+            );
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -53,12 +67,28 @@ public class MainActivity extends AppCompatActivity {
     private void launchWaveFormFromFile(@Nullable Bundle savedInstanceState) {
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new CustomWaveformFragment())
+                    .add(R.id.container, CustomWaveformFragment.newInstance())
                     .commit();
         }
     }
 
     public static class CustomWaveformFragment extends WaveformFragment {
+
+        private static final String KEY_URI = "extra_uri";
+
+        @NonNull
+        public static CustomWaveformFragment newInstance() {
+            return new CustomWaveformFragment();
+        }
+
+        @NonNull
+        public static CustomWaveformFragment newInstance(Uri path) {
+            final CustomWaveformFragment instance = new CustomWaveformFragment();
+            final Bundle args = new Bundle();
+            args.putParcelable(KEY_URI, path);
+            instance.setArguments(args);
+            return instance;
+        }
 
         /**
          * Provide path to your audio file.
@@ -68,6 +98,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected String getFileName() {
             return "path to your audio file";
+        }
+
+        @Override
+        protected Uri getUri() {
+            return requireArguments().getParcelable(KEY_URI);
         }
 
         /**

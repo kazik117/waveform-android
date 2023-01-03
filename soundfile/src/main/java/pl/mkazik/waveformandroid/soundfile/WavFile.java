@@ -1,9 +1,12 @@
 package pl.mkazik.waveformandroid.soundfile;
 
+import androidx.annotation.NonNull;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Wav file abstraction layer.
@@ -26,7 +29,7 @@ public class WavFile {
     private int bytesPerSample;            // Number of bytes required to store a single sample
     private long numFrames;                    // Number of frames within the data section
     private FileOutputStream oStream;    // Output stream used for writting data
-    private FileInputStream iStream;        // Input stream used for reading data
+    private InputStream iStream;        // Input stream used for reading data
     private float floatScale;                // Scaling factor used for int <-> float conversion
     private float floatOffset;            // Offset factor used for int <-> float conversion
     private boolean wordAlignAdjust;        // Specify if an extra byte at the end of the data chunk is required for word alignment
@@ -43,6 +46,7 @@ public class WavFile {
     private int bufferPointer;                // Points to the current position in local buffer
     private int bytesRead;                    // Bytes read after last read into local buffer
     private long frameCounter;                // Current number of frames read or written
+    private long realFileSize;
     private long fileSize;
 
     // Cannot instantiate WavFile directly, must either use newWavFile() or openWavFile()
@@ -82,10 +86,22 @@ public class WavFile {
         // Instantiate new Wavfile and store the file reference
         WavFile wavFile = new WavFile();
         wavFile.file = file;
+        wavFile.realFileSize = file.length();
 
         // Create a new file input stream for reading file data
         wavFile.iStream = new FileInputStream(file);
 
+        return parseWavFile(wavFile);
+    }
+
+    public static WavFile openWavFile(InputStream stream) throws IOException, WavFileException {
+        WavFile wavFile = new WavFile();
+        wavFile.iStream = stream;
+        return parseWavFile(wavFile);
+    }
+
+    @NonNull
+    private static WavFile parseWavFile(WavFile wavFile) throws IOException, WavFileException {
         // Read the first 12 bytes of the file
         int bytesRead = wavFile.iStream.read(wavFile.buffer, 0, 12);
         if (bytesRead != 12) throw new WavFileException("Not enough wav file bytes for header");
@@ -98,11 +114,12 @@ public class WavFile {
         // Check the header bytes contains the correct signature
         if (riffChunkID != RIFF_CHUNK_ID)
             throw new WavFileException("Invalid Wav Header data, incorrect riff chunk ID");
-        if (riffTypeID != RIFF_TYPE_ID) throw new WavFileException("Invalid Wav Header data, incorrect riff type ID");
+        if (riffTypeID != RIFF_TYPE_ID)
+            throw new WavFileException("Invalid Wav Header data, incorrect riff type ID");
 
         // Check that the file size matches the number of bytes listed in header
-        if (file.length() != chunkSize + 8) {
-            throw new WavFileException("Header chunk size (" + chunkSize + ") does not match file size (" + file.length() + ")");
+        if (wavFile.realFileSize != chunkSize + 8) {
+            throw new WavFileException("Header chunk size (" + chunkSize + ") does not match file size (" + wavFile.realFileSize + ")");
         }
 
         wavFile.fileSize = chunkSize;

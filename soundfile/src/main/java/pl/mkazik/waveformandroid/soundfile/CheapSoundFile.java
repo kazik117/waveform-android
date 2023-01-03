@@ -17,6 +17,8 @@
 package pl.mkazik.waveformandroid.soundfile;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * CheapSoundFile is the parent class of several subclasses that each
@@ -48,6 +50,7 @@ public class CheapSoundFile {
     public interface Factory {
         public CheapSoundFile create();
         public String[] getSupportedExtensions();
+        public String[] getSupportedMimeTypes();
     }
 
     public static boolean isFilenameSupported(String filename) {
@@ -69,8 +72,15 @@ public class CheapSoundFile {
 
     protected ProgressListener mProgressListener = null;
     protected File mInputFile = null;
+    protected InputStream mInputStream = null;
+    protected long mFileSize = 0;
 
     protected CheapSoundFile() {
+    }
+
+    public void ReadStream(InputStream inputStream, long length) throws IOException {
+        mInputStream = inputStream;
+        mFileSize = length;
     }
 
     public void ReadFile(File inputFile)
@@ -135,9 +145,5 @@ public class CheapSoundFile {
             buf[x++] = HEX_CHARS[hash[i] & 0xf];
         }
         return new String(buf);
-    }
-
-    public void WriteFile(File outputFile, int startFrame, int numFrames)
-            throws java.io.IOException {
     }
 }
